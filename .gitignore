@@ -1,1 +1,5 @@
 venv
+media
+__pycache__
+*.jpg
+*.db
