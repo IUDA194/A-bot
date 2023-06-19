@@ -1,5 +1,6 @@
 venv
-media
+/media
+687899499
 __pycache__
 *.jpg
 *.db
