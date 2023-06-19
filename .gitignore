@@ -3,3 +3,5 @@ media
 __pycache__
 *.jpg
 *.db
+*.mp4
+*.zip

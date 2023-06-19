@@ -6,7 +6,7 @@ fileNames = [ "passport.png", "img3.jpg" ]
 
 class passport_gen:
 
-    passport_path = "passport.png"
+    passport_path = "templates/passport.png"
     user_id = None
     photo_path = None
     name = None
