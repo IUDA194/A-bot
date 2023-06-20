@@ -2,6 +2,7 @@ from pywebcopy import save_webpage, save_website
 import validators
 import os
 import time
+import shutil
 import zipfile
 
 class dowobload_site:
@@ -26,6 +27,12 @@ class dowobload_site:
 
     def website(self, url, folder : str, name, user_id):
         if not os.path.exists(os.path.abspath(folder)): os.mkdir(os.path.abspath(folder))
+        try:
+                os.rmdir(os.path.abspath(f"{folder}"))
+                os.mkdir(os.path.abspath(f"{folder}"))
+        except:
+                shutil.rmtree(os.path.abspath(f"{folder}"))
+                os.mkdir(os.path.abspath(f"{folder}"))
         save_website(
             url=url,
             project_folder=os.path.abspath(folder),
@@ -36,6 +43,7 @@ class dowobload_site:
             delay=None,
             threaded=False)
             
+
         with zipfile.ZipFile(f"{user_id}.zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, _, files in os.walk(folder):
                 for file in files:
@@ -43,8 +51,3 @@ class dowobload_site:
                     zipf.write(file_path, os.path.relpath(file_path, folder))
 	
         return f"{user_id}.zip"
-
-
-#dw = dowobload_site()
-
-#dw.website("https://habr.com/ru/all/", "google", "google_page", "31231241")

@@ -69,18 +69,19 @@ class unik_video(StatesGroup):
 
 main_kb = InlineKeyboardMarkup(row_width=1).add(
     InlineKeyboardButton("📷 Уникализировать КАРТИНКУ", callback_data="photo_unik"),
-    InlineKeyboardButton("🆔 Сгенерировать документ", callback_data="passport_gen"),
-    InlineKeyboardButton("👩 ГЕНЕРАЦИЯ ПАРОЛЕЙ 👨", callback_data="random_password_gen"),
     InlineKeyboardButton("📹 Уникализировать ВИДЕО", callback_data="video_unik"),
+    InlineKeyboardButton("🆔 Сгенерировать документ", callback_data="passport_gen"),
+    InlineKeyboardButton("🔑 ГЕНЕРАЦИЯ ПАРОЛЕЙ 🔑", callback_data="random_password_gen"),
     InlineKeyboardButton("👩 ГЕНЕРАЦИЯ СЕЛФИ 👨", callback_data="random_face_gen"),
-    InlineKeyboardButton("🌐 Скопировать сайт в ZIP", callback_data="site_dowonload"),
-    InlineKeyboardButton("👩 ГЕНЕРАЦИЯ Имен и Фам. 👨", callback_data="fake_data_gen")
+    InlineKeyboardButton("🔠 ГЕНЕРАЦИЯ Имен и Фам. 🔠", callback_data="fake_data_gen"),
+    InlineKeyboardButton("🌐 СКАЧАТЬ сайт в ZIP", callback_data="site_dowonload"),
+    InlineKeyboardButton("☎ связь с нами", url='https://t.me/Helper_Media')
 
 )
 
 @dp.message_handler(commands=["start"])
 async def start_command(message : types.Message):
-    await bot.send_message(message.from_user.id, """🎦 HELPER MEDIA DDT с использованием ИИ
+    await bot.send_message(message.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
 
 💥 Этот бот был создан специально для уникализации креативов, генерации ФИО, генерации селфи, генерации документов, генерации паролей для Facebook/Google/YouTube.
 
@@ -91,7 +92,7 @@ async def start_command(message : types.Message):
 
 @dp.callback_query_handler(text="main")
 async def unik_photo(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA DDT с использованием ИИ
+    await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
 
  Выберите необходимую операцию 👇""", reply_markup=main_kb)
 
@@ -152,9 +153,10 @@ async def photo_state(callback_query: types.CallbackQuery, state: FSMContext):
 @dp.callback_query_handler(text_startswith="", state=photo_do_state.way)
 async def photo_state(callback_query: types.CallbackQuery, state: FSMContext):
     if callback_query.data != "Назад":
+        kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Отменить", callback_data="yes"))
         global way
         way = callback_query.data
-        await bot.send_message(callback_query.from_user.id, "Отправьте КАРТИНКУ для уникализации или 'Отмените' действие. ")
+        await bot.send_message(callback_query.from_user.id, "Отправьте КАРТИНКУ для уникализации или 'Отмените' действие. ", reply_markup=kb)
         await photo_do_state.photo.set()
     else:
         await state.finish()
@@ -162,8 +164,12 @@ async def photo_state(callback_query: types.CallbackQuery, state: FSMContext):
         
     <b>Главное меню</b>""", reply_markup=main_kb)
     
+@dp.callback_query_handler(text_startswith="", state=photo_do_state.photo)
+async def photo_state(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.finish()
+    await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
 
-
+ Выберите необходимую операцию 👇""", reply_markup=main_kb)
 
 @dp.message_handler(state=photo_do_state.photo, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
@@ -196,7 +202,7 @@ async def photo_state(message : types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text="random_face_gen")
 async def unik_photo(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, "Вы можете генерировать лица людей для аватарок и для прохождения селфи (неограниченное кол-во раз) пол рандом 50/50. Введите количество фотографий цифрой, или назад")
+    await bot.send_message(callback_query.from_user.id, "Вы можете генерировать лица людей для аватарок и для прохождения селфи (неограниченное кол-во раз) пол рандом 50/50. Введите количество фотографий цифрой, или напишите «назад»")
     await person_gen.number.set()
 
 @dp.message_handler(state=person_gen.number)
@@ -228,8 +234,9 @@ async def unik_photo(callback_query: types.CallbackQuery):
 @dp.message_handler(state=save_site.url, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
+        kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
         await bot.send_message(message.from_user.id, "Скачиваю сайт")
-        await bot.send_document(message.from_user.id, open(ds.website(message.text, str(message.from_user.id), str(message.from_user.id), str(message.from_user.id)), "rb"))
+        await bot.send_document(message.from_user.id, open(ds.website(message.text, str(message.from_user.id), str(message.from_user.id), str(message.from_user.id)), "rb"), reply_markup=kb)
         await state.finish()
     else:
         await state.finish()
@@ -239,7 +246,7 @@ async def photo_state(message : types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text="passport_gen")
 async def unik_photo(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, "Отправьте  ИМЯ на документ")
+    await bot.send_message(callback_query.from_user.id, "Отправьте  ИМЯ на документ, или напишите «назад»")
     await fake_passport_gen.name.set()
 
 @dp.message_handler(state=fake_passport_gen.name, content_types=ContentType.ANY)
@@ -247,7 +254,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         async with state.proxy() as data:
             data['name'] = message.text
-        await bot.send_message(message.from_user.id, "Отправьте  Фамилию на документ")
+        await bot.send_message(message.from_user.id, "Отправьте  Фамилию на документ, или напишите «назад»")
         await fake_passport_gen.second_name.set()
     else:
         await state.finish()
@@ -261,7 +268,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         async with state.proxy() as data:
             data['second_name'] = message.text
-        await bot.send_message(message.from_user.id, "Отправьте  ОТЧЕСТВО  на документ")
+        await bot.send_message(message.from_user.id, "Отправьте  ОТЧЕСТВО  на документ, или напишите «назад»")
         await fake_passport_gen.father_name.set()
     else:
         await state.finish()
@@ -274,7 +281,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         async with state.proxy() as data:
             data['father_name'] = message.text
-        await bot.send_message(message.from_user.id, "Отправьте  ПОЛ  на документ (муж или жен)(men или women) дословно.")
+        await bot.send_message(message.from_user.id, "Отправьте  ПОЛ  на документ (муж или жен)(men или women) дословно, или напишите «назад»")
         await fake_passport_gen.sex.set()
     else:
         await state.finish()
@@ -287,7 +294,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         async with state.proxy() as data:
             data['sex'] = message.text
-        await bot.send_message(message.from_user.id, "Отправьте ДАТУ РОЖДЕНИЯ на документ, пример: (30.01.1970)")
+        await bot.send_message(message.from_user.id, "Отправьте ДАТУ РОЖДЕНИЯ на документ, пример: (30.01.1970), или напишите «назад»")
         await fake_passport_gen.birthday.set()
     else:
         await state.finish()
@@ -300,7 +307,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         async with state.proxy() as data:
             data['birthday'] = message.text
-        await bot.send_message(message.from_user.id, "Отправьте ДАТУ КОНЦА СРОКА ДЕЙСТВИЯ ПАСПОРТА пример: сейчас 2023 год дата рождения 30.01.1970 , пишите +3-10 лет от даты рождения + к нынешнему году 30.01.2030")
+        await bot.send_message(message.from_user.id, "Отправьте ДАТУ КОНЦА СРОКА ДЕЙСТВИЯ ПАСПОРТА пример: сейчас 2023 год дата рождения 30.01.1970 , пишите +3-10 лет от даты рождения + к нынешнему году 30.01.2030, или напишите «назад»")
         await fake_passport_gen.end_day.set()
     else:
         await state.finish()
@@ -313,7 +320,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         async with state.proxy() as data:
             data['end_day'] = message.text
-        await bot.send_message(message.from_user.id, "Отправьте РЕГИСТРАЦИОННЫЙ НОМЕР, пример: дата рождения -(тире) и еще 5 рандомных символов (Г.М.Д) 19700130-00000 (5 рандом цифр)")
+        await bot.send_message(message.from_user.id, "Отправьте РЕГИСТРАЦИОННЫЙ НОМЕР, пример: дата рождения -(тире) и еще 5 рандомных символов (Г.М.Д) 19700130-00000 (5 рандом цифр), или напишите «назад»")
         await fake_passport_gen.reg_number.set()
     else:
         await state.finish()
@@ -326,7 +333,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         async with state.proxy() as data:
             data['reg_number'] = message.text
-        await bot.send_message(message.from_user.id, "Отправьте НОМЕР ДОКУМЕНТА, пример : 9 рандом цифр (123456789)")
+        await bot.send_message(message.from_user.id, "Отправьте НОМЕР ДОКУМЕНТА, пример : 9 рандом цифр (123456789), или напишите «назад»")
         await fake_passport_gen.doc_number.set()
     else:
         await state.finish()
@@ -338,12 +345,13 @@ async def photo_state(message : types.Message, state: FSMContext):
 async def photo_state(message : types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['doc_number'] = message.text
-    await bot.send_message(message.from_user.id, "Отправьте ФОТО (селфи) на документ")
+    await bot.send_message(message.from_user.id, "Отправьте ФОТО (селфи) на документ, или напишите «назад»")
     await fake_passport_gen.photo.set()
 
 @dp.message_handler(state=fake_passport_gen.photo, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
     await message.photo[-1].download(destination_file=f"{message.from_user.id}.jpg")
+    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
     async with state.proxy() as data:
         await bot.send_photo(message.from_user.id, open(passport_gen(message.from_user.id, f"{message.from_user.id}.jpg",
                     data['name'], 
@@ -353,7 +361,7 @@ async def photo_state(message : types.Message, state: FSMContext):
                     data['birthday'],
                     data['end_day'],
                     data['reg_number'],
-                    data['doc_number']).gen_passport(), "rb"))
+                    data['doc_number']).gen_passport(), "rb"), reply_markup=kb)
     await state.finish()
 
 @dp.callback_query_handler(text="fake_data_gen")
@@ -430,8 +438,9 @@ async def unik_photo(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(text_startswith="open_selected_password_")
 async def unik_photo(callback_query: types.CallbackQuery):
+    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
     opened_password = database.select_name_from_name(callback_query.from_user.id, callback_query.data[23:])['result'][0][0]
-    await bot.send_message(callback_query.from_user.id, f"<b>Ваш пароль: </b><code>{opened_password}</code>")
+    await bot.send_message(callback_query.from_user.id, f"<b>Ваш пароль: </b><code>{opened_password}</code>", reply_markup=kb)
 
 password_memory = {} # Тут храним пароли которые создали для того что-бы в последсвии сохранить
 
@@ -472,8 +481,9 @@ async def unik_photo(callback_query: types.CallbackQuery):
 @dp.message_handler(state=save_password.name, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
+        kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
         database.new_pass_name(message.from_user.id, message.text, password_memory[message.from_user.id])
-        await bot.send_message(message.from_user.id, f"Пароль: {password_memory[message.from_user.id]} сохранён с названием {message.text}")
+        await bot.send_message(message.from_user.id, f"Пароль: {password_memory[message.from_user.id]}сохранён с названием {message.text}", reply_markup=kb)
         await state.finish()
     else:
         await state.finish()
