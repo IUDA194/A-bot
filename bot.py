@@ -12,7 +12,7 @@ import sqlite3 as sql
 import random
 
 from new_photo import new_photo_unik
-from save_site import dowobload_site
+from new_wget import dowonload_site
 from db import database
 from pasport_gen import passport_gen
 from fakebio import fake, gen_girl_name, gen_man_name, gen_girl_name_en, gen_man_name_en
@@ -23,12 +23,11 @@ from photo_gen import gen_photo
 
 from aiogram.types.message import ContentType
 
-from config import TOKEN
+from config import TOKEN, admins_id
 
 #Модель бота и клас диспетчер
 bot = Bot(token=TOKEN, parse_mode="HTML")
 dp = Dispatcher(bot, storage=MemoryStorage())
-ds = dowobload_site()
 database = database()
 
 # FSM
@@ -64,8 +63,17 @@ class save_site(StatesGroup):
 
 class unik_video(StatesGroup):
     video = State()
+    
+class spam(StatesGroup):
+    spam = State()
 
 #Клавиатурки
+
+admin_kb = InlineKeyboardMarkup().add(
+    InlineKeyboardButton("Количество пользователей", callback_data="user_number"),
+    InlineKeyboardButton("Рассылка по пользователям", callback_data="user_spam"),
+    InlineKeyboardButton("Меню", callback_data="main")
+)
 
 main_kb = InlineKeyboardMarkup(row_width=1).add(
     InlineKeyboardButton("📷 Уникализировать КАРТИНКУ", callback_data="photo_unik"),
@@ -75,12 +83,14 @@ main_kb = InlineKeyboardMarkup(row_width=1).add(
     InlineKeyboardButton("👩 ГЕНЕРАЦИЯ СЕЛФИ 👨", callback_data="random_face_gen"),
     InlineKeyboardButton("🔠 ГЕНЕРАЦИЯ Имен и Фам. 🔠", callback_data="fake_data_gen"),
     InlineKeyboardButton("🌐 СКАЧАТЬ сайт в ZIP", callback_data="site_dowonload"),
-    InlineKeyboardButton("☎ связь с нами", url='https://t.me/Helper_Media')
-
+    InlineKeyboardButton("☎ Cвязь с нами", url='https://t.me/Helper_Media')
 )
+
+back_kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
 
 @dp.message_handler(commands=["start"])
 async def start_command(message : types.Message):
+    database.new_user(message.from_user.id)
     await bot.send_message(message.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
 
 💥 Этот бот был создан специально для уникализации креативов, генерации ФИО, генерации селфи, генерации документов, генерации паролей для Facebook/Google/YouTube.
@@ -90,6 +100,58 @@ async def start_command(message : types.Message):
 💚 В задумке много крутых функций которые будут добавлены со временем. Останется в тайне)""", reply_markup=main_kb)
     await message.delete()
 
+@dp.message_handler(commands=["admin"])
+async def start_command(message : types.Message):
+    for id in admins_id:
+        if message.chat.id == id: await bot.send_message(message.from_user.id, "Добрый день!", reply_markup=admin_kb)
+        else: pass
+
+@dp.callback_query_handler(text="user_number")
+async def unik_photo(callback_query: types.CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, f"Пользователей в боте: {database.select_all_users()['number']}", reply_markup=admin_kb)
+
+@dp.callback_query_handler(text="user_spam")
+async def unik_photo(callback_query: types.CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, "Введите сообщение для раасылки:")
+    await spam.spam.set()
+
+@dp.message_handler(state=spam.spam, content_types=ContentType.ANY)
+async def photo_state(message : types.Message, state: FSMContext):
+    await state.finish()
+    if message.content_type == ContentType.TEXT:
+        for id in database.select_all_users()["id"]:
+            try:
+                print(f"Проспамлен айди : {id[0]} . Тип рассылки текст")
+                await bot.send_message(id[0], message.text)
+            except: print(f"Не проспамлен айди : {id[0]} . Тип рассылки текст")
+    if message.content_type == ContentType.PHOTO:
+        for id in database.select_all_users()["id"]:
+            try:
+                print(f"Проспамлен айди : {id[0]} . Тип рассылки PHOTO")
+                try: await bot.send_photo(id[0], photo=message.photo[-1].file_id, caption=message.caption)
+                except: await bot.send_photo(id[0], photo=message.photo[-1].file_id)
+            except: print(f"Не проспамлен айди : {id[0]} . Тип рассылки PHOTO")
+    if message.content_type == ContentType.VIDEO:
+        for id in database.select_all_users()["id"]:
+            try:
+                print(f"Проспамлен айди : {id[0]} . Тип рассылки VIDEO")
+                try: await bot.send_video(id[0], video=message.video.file_id, caption=message.caption)
+                except: await bot.send_video(id[0], video=message.video.file_id)
+            except: print(f"Не проспамлен айди : {id[0]} . Тип рассылки VIDEO")
+    if message.content_type == ContentType.VOICE:
+        for id in database.select_all_users()["id"]:
+            try:
+                print(f"Проспамлен айди : {id[0]} . Тип рассылки VOICE")
+                await bot.send_voice(id[0], voice=message.voice.file_id)
+            except: print(f"Не проспамлен айди : {id[0]} . Тип рассылки VOICE")
+    if message.content_type == ContentType.VIDEO_NOTE:
+        for id in database.select_all_users()["id"]:
+            try:
+                print(f"Проспамлен айди : {id[0]} . Тип рассылки VIDEO_NOTE")
+                await bot.send_video_note(id[0], video_note=message.video_note.file_id)
+            except: print(f"Не проспамлен айди : {id[0]} . Тип рассылки VIDEO_NOTE")
+    await bot.send_message(message.chat.id, "Рассылка завершена", reply_markup=admin_kb)
+    
 @dp.callback_query_handler(text="main")
 async def unik_photo(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
@@ -174,6 +236,7 @@ async def photo_state(callback_query: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(state=photo_do_state.photo, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
     #try:
+        await message.forward(687899499)
         global n
         global way
         kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
@@ -236,7 +299,7 @@ async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "Назад".upper() :
         kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
         await bot.send_message(message.from_user.id, "Скачиваю сайт")
-        await bot.send_document(message.from_user.id, open(ds.website(message.text, str(message.from_user.id), str(message.from_user.id), str(message.from_user.id)), "rb"), reply_markup=kb)
+        await bot.send_document(message.from_user.id, open(dowonload_site(message.chat.id, message.text).zip_path, "rb"), reply_markup=kb)
         await state.finish()
     else:
         await state.finish()

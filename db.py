@@ -10,6 +10,9 @@ with db:
         name TEXT,
         password TEXT
         )""")
+    cur.execute("""CREATE TABLE if not exists users (
+        chatid TEXT
+        )""")
     db.commit()
 
 class database:
@@ -17,6 +20,19 @@ class database:
         cur.execute(""" INSERT INTO passwords ("chatid", "name", "password") VALUES (?,?,?) """, (user_id, name, password))
         db.commit()
         return {"status" : True}
+    
+    def new_user(self, user_id : str) -> dict:
+        cur.execute(""" SELECT chatid FROM users WHERE chatid = ? """, (user_id,))
+        f = cur.fetchall()
+        if len(f) > 0: pass
+        else:  cur.execute(""" INSERT INTO users ("chatid") VALUES (?) """, (user_id,))
+        db.commit()
+        return {"status" : True}
+
+    def select_all_users(self) -> dict:
+        cur.execute(""" SELECT chatid FROM users """)
+        users = cur.fetchall()
+        return {"number" : len(users), "id" : users}
 
     def select_name_from_id(self, user_id : str) -> dict:
         cur.execute(""" SELECT name FROM passwords WHERE chatid = ? """, (user_id,))
