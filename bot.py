@@ -20,10 +20,11 @@ from metadate import photo_do
 from danerate_random_pass import random_password
 from video_unik_a import video_update
 from photo_gen import gen_photo
+from twofa import twofa
 
 from aiogram.types.message import ContentType
 
-from config import TOKEN, admins_id
+from config import TOKEN, admins_id, CHANNELS, NOT_SUB_MESSAGE
 
 #Модель бота и клас диспетчер
 bot = Bot(token=TOKEN, parse_mode="HTML")
@@ -39,6 +40,12 @@ class photo_do_state(StatesGroup):
 
 class person_gen(StatesGroup):
     number = State()
+
+class fake_passport_gen_COUNTRY(StatesGroup):
+    country = State()
+
+class twofa_s(StatesGroup):
+    code = State()
 
 class fake_passport_gen(StatesGroup):
     name = State()
@@ -83,22 +90,55 @@ main_kb = InlineKeyboardMarkup(row_width=1).add(
     InlineKeyboardButton("👩 ГЕНЕРАЦИЯ СЕЛФИ 👨", callback_data="random_face_gen"),
     InlineKeyboardButton("🔠 ГЕНЕРАЦИЯ Имен и Фам. 🔠", callback_data="fake_data_gen"),
     InlineKeyboardButton("🌐 СКАЧАТЬ сайт в ZIP", callback_data="site_dowonload"),
+    InlineKeyboardButton("⚙️ Генератор 2FA ", callback_data="2fa"),
     InlineKeyboardButton("☎ Cвязь с нами", url='https://t.me/Helper_Media')
 )
 
 back_kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
 
+async def check(channels, us_id):
+    for channel in channels:
+        chat_member = await bot.get_chat_member(chat_id=channel[1], user_id=us_id)
+        if chat_member['status'] == 'left':
+            return False
+    return True
+
+inkb = InlineKeyboardMarkup()
+inkb.add(InlineKeyboardButton(text= CHANNELS[0][0], url = CHANNELS[0][2]))
+inkb.add(InlineKeyboardButton(text="Я подписан(а)", callback_data="checkSub"))
+
+@dp.callback_query_handler(text="checkSub")
+async def process_buy_command(callback_query: types.CallbackQuery):
+    if await check(CHANNELS, callback_query.from_user.id):
+        database.new_user(callback_query.from_user.id)
+        await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
+
+    💥 Этот бот был создан специально для уникализации креативов, генерации ФИО, генерации селфи, генерации документов, генерации паролей для Facebook/Google/YouTube.
+
+    В бот встроен скрипт с использованием ИИ что делает данный бот уникальным
+
+    💚 В задумке много крутых функций которые будут добавлены со временем. Останется в тайне)""", reply_markup=main_kb)
+        await callback_query.message.delete()
+    else:
+        await bot.send_message(callback_query.from_user.id, f"{NOT_SUB_MESSAGE}", reply_markup=inkb)
+
+
 @dp.message_handler(commands=["start"])
 async def start_command(message : types.Message):
-    database.new_user(message.from_user.id)
-    await bot.send_message(message.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
+    print("start")
+    if await check(CHANNELS, message.from_user.id):
+        database.new_user(message.from_user.id)
+        await bot.send_message(message.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
 
-💥 Этот бот был создан специально для уникализации креативов, генерации ФИО, генерации селфи, генерации документов, генерации паролей для Facebook/Google/YouTube.
+    💥 Этот бот был создан специально для уникализации креативов, генерации ФИО, генерации селфи, генерации документов, генерации паролей для Facebook/Google/YouTube.
 
-В бот встроен скрипт с использованием ИИ что делает данный бот уникальным
+    В бот встроен скрипт с использованием ИИ что делает данный бот уникальным
 
-💚 В задумке много крутых функций которые будут добавлены со временем. Останется в тайне)""", reply_markup=main_kb)
-    await message.delete()
+    💚 В задумке много крутых функций которые будут добавлены со временем. Останется в тайне)""", reply_markup=main_kb)
+        await message.delete()
+    else:
+        await message.delete()
+        await bot.send_message(message.from_user.id, f"{NOT_SUB_MESSAGE}", reply_markup=inkb)
 
 @dp.message_handler(commands=["admin"])
 async def start_command(message : types.Message):
@@ -154,26 +194,57 @@ async def photo_state(message : types.Message, state: FSMContext):
     
 @dp.callback_query_handler(text="main")
 async def unik_photo(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
+    if await check(CHANNELS, callback_query.from_user.id):
+        await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
 
- Выберите необходимую операцию 👇""", reply_markup=main_kb)
+    Выберите необходимую операцию 👇""", reply_markup=main_kb)
+    else:
+        await bot.send_message(callback_query.from_user.id, f"{NOT_SUB_MESSAGE}", reply_markup=inkb)
 
 @dp.callback_query_handler(text="video_unik")
 async def unik_photo(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, "Отправьте видео для уникализации")
+    await bot.send_message(callback_query.from_user.id, "Отправьте видео для уникализации, или напишите назад")
     await unik_video.video.set()
 
 @dp.message_handler(state=unik_video.video, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
-    try:
-        await message.video.download(destination_file=f"{message.from_user.id}.mp4")
-        video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-        await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
-    except: 
-        await message.document.download(destination_file=f"{message.from_user.id}.MOV")
-        #video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-        #await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+    if message.text.upper() != "Назад".upper() :
+        try:
+            try:
+                await message.video.download(destination_file=f"{message.from_user.id}.mp4")
+                video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
+                await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+            except: 
+                await message.document.download(destination_file=f"{message.from_user.id}.MOV")
+                #video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
+                #await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+        except:    
+            await bot.send_message(message.from_user.id, """Видео слишком большое воспользуйтесь сайтом: ТУТ_БУДЕТ_ССЫЛКА
+        
+    <b>Главное меню</b>""", reply_markup=main_kb)
+    else:
+        await state.finish()
+        await bot.send_message(message.from_user.id, """Привет!
+        
+    <b>Главное меню</b>""", reply_markup=main_kb)
 
+@dp.callback_query_handler(text="2fa")
+async def unik_photo(callback_query: types.CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, "Отправь секретный ключь 2FA, или напиши назад")
+    await twofa_s.code.set()
+
+@dp.message_handler(state=twofa_s.code, content_types=ContentType.ANY)
+async def photo_state(message : types.Message, state: FSMContext):
+    if message.text.upper() != "НАЗАД":
+        await message.reply(twofa.gen_code(message.text), reply_markup=back_kb)
+        await state.finish()
+    else:
+        await state.finish()
+        await bot.send_message(message.from_user.id, """Привет!
+        
+    <b>Главное меню</b>""", reply_markup=main_kb)
+    
+    
 n = None
 way = None
 
@@ -296,21 +367,51 @@ async def unik_photo(callback_query: types.CallbackQuery):
     
 @dp.message_handler(state=save_site.url, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
-    if message.text.upper() != "Назад".upper() :
-        kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
-        await bot.send_message(message.from_user.id, "Скачиваю сайт")
-        await bot.send_document(message.from_user.id, open(dowonload_site(message.chat.id, message.text).zip_path, "rb"), reply_markup=kb)
-        await state.finish()
-    else:
-        await state.finish()
-        await bot.send_message(message.from_user.id, """Привет!
+    try:
+        if message.text.upper() != "Назад".upper() :
+            kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
+            await bot.send_message(message.from_user.id, "Скачиваю сайт")
+            await bot.send_document(message.from_user.id, open(dowonload_site(message.chat.id, message.text).zip_path, "rb"), reply_markup=kb)
+            await state.finish()
+        else:
+            await state.finish()
+            await bot.send_message(message.from_user.id, """Привет!
+            
+        <b>Главное меню</b>""", reply_markup=main_kb)
+    except:
+            await state.finish()
+            await bot.send_message(message.from_user.id, """На сайте защита от скачивания, попробуйте другой сайт.
+            
+        <b>Главное меню</b>""", reply_markup=main_kb)
         
-    <b>Главное меню</b>""", reply_markup=main_kb)
+contry_temp = {}
 
 @dp.callback_query_handler(text="passport_gen")
 async def unik_photo(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, "Отправьте  ИМЯ на документ, или напишите «назад»")
-    await fake_passport_gen.name.set()
+    global contry_temp
+    contry_temp[callback_query.from_user.id] = None
+    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Украина", callback_data="ukr"),
+                                    InlineKeyboardButton("Польша", callback_data="pl"),
+                                    InlineKeyboardButton("Франция", callback_data="fr"),
+                                    InlineKeyboardButton("USA", callback_data="usa"),
+                                    InlineKeyboardButton("Назад", callback_data="b"))
+    await bot.send_message(callback_query.from_user.id, "Выберете страну:", reply_markup=kb)
+    await fake_passport_gen_COUNTRY.country.set()
+    
+@dp.callback_query_handler(text_startswith="", state=fake_passport_gen_COUNTRY.country)
+async def unik_photo(callback_query: types.CallbackQuery):
+    if callback_query.data != "b":
+        global contry_temp
+        contry_temp[callback_query.from_user.id] = callback_query.data
+        await bot.send_message(callback_query.from_user.id, "Отправьте  ИМЯ на документ, или напишите «назад»")
+        await fake_passport_gen.name.set()
+    else:
+        if await check(CHANNELS, callback_query.from_user.id):
+            await bot.send_message(callback_query.from_user.id, """🎦 HELPER MEDIA с использованием ИИ
+
+Выберите необходимую операцию 👇""", reply_markup=main_kb)
+        else:
+            await bot.send_message(callback_query.from_user.id, f"{NOT_SUB_MESSAGE}", reply_markup=inkb)
 
 @dp.message_handler(state=fake_passport_gen.name, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
@@ -413,6 +514,7 @@ async def photo_state(message : types.Message, state: FSMContext):
 
 @dp.message_handler(state=fake_passport_gen.photo, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
+    global contry_temp
     await message.photo[-1].download(destination_file=f"{message.from_user.id}.jpg")
     kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
     async with state.proxy() as data:
@@ -424,7 +526,8 @@ async def photo_state(message : types.Message, state: FSMContext):
                     data['birthday'],
                     data['end_day'],
                     data['reg_number'],
-                    data['doc_number']).gen_passport(), "rb"), reply_markup=kb)
+                    data['doc_number'],
+                    f"templates/{contry_temp[message.chat.id]}/{random.randint(1, 10)}.png").gen_passport(), "rb"), reply_markup=kb)
     await state.finish()
 
 @dp.callback_query_handler(text="fake_data_gen")
@@ -509,7 +612,7 @@ password_memory = {} # Тут храним пароли которые созд�
 
 @dp.callback_query_handler(text="gen_new_passwort")
 async def unik_photo(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, "Введите один из уровней сложности пароля (1/2/3)")
+    await bot.send_message(callback_query.from_user.id, "Введите один из уровней сложности пароля (1 - самый сложный /2/3)")
     await random_pass_gen_state.lvl.set()
 
 @dp.message_handler(state=random_pass_gen_state.lvl, content_types=ContentType.ANY)

@@ -28,7 +28,8 @@ class passport_gen:
                     birthday : str, 
                     passport_end_day : str, 
                     regestratin_number : str, 
-                    document_number : str ) -> None:
+                    document_number : str,
+                    template_path) -> None:
         #self.gen_passport(photo_name, name, second_name, father_name,  sex, birthday, passport_end_day, regestratin_number, document_number)
         self.photo_path = photo_name
         self.user_id = user_id
@@ -40,6 +41,7 @@ class passport_gen:
         self.passport_end_day = passport_end_day
         self.regestratin_number = regestratin_number
         self.document_number = document_number
+        self.passport_path = template_path
 
 
     def gen_passport(self) -> dict:
