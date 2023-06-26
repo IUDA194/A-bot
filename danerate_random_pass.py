@@ -12,11 +12,10 @@ class random_password:
         self.PASSWORD = self.genarate_rand_pass(lvl, lenth, number)
     
     def genarate_rand_pass(self,lvl : int = 1, lenth : int = 8, number : int = 1) -> dict:
-        match lvl:
-            case 1: chars = self.CHARS_LVL_1
-            case 2: chars = self.CHARS_LVL_2
-            case 3: chars = self.CHARS_LVL_3
-            case _: return {"status" : False, "error" : f"Incorrect input lvl! You can enter 1, 2, or 3. Your input is {lvl}"}
+        if lvl == 1: chars = self.CHARS_LVL_1
+        if lvl == 2: chars = self.CHARS_LVL_2
+        if lvl == 3: chars = self.CHARS_LVL_3
+        else: return {"status" : False, "error" : f"Incorrect input lvl! You can enter 1, 2, or 3. Your input is {lvl}"}
         if type(lenth) != int:
             return {"status" : False, "error" : f"Incorrect input len! You can enter integer type. Your input have type: {type(len)}"}
         if type(number) == int:
