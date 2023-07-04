@@ -84,7 +84,7 @@ admin_kb = InlineKeyboardMarkup().add(
 
 main_kb = InlineKeyboardMarkup(row_width=1).add(
     InlineKeyboardButton("📷 Уникализировать КАРТИНКУ", callback_data="photo_unik"),
-    InlineKeyboardButton("📹 Уникализировать ВИДЕО", callback_data="video_unik"),
+    #InlineKeyboardButton("📹 Уникализировать ВИДЕО", callback_data="video_unik"),
     InlineKeyboardButton("🆔 Сгенерировать документ", callback_data="passport_gen"),
     InlineKeyboardButton("🔑 ГЕНЕРАЦИЯ ПАРОЛЕЙ 🔑", callback_data="random_password_gen"),
     InlineKeyboardButton("👩 ГЕНЕРАЦИЯ СЕЛФИ 👨", callback_data="random_face_gen"),
@@ -208,32 +208,58 @@ async def unik_photo(callback_query: types.CallbackQuery):
 
 @dp.message_handler(state=unik_video.video, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
-    if message.text.upper() != "Назад".upper() :
-        try:
+    try:
+        if message.text.upper() != "Назад".upper() :
             try:
-                await message.video.download(destination_file=f"{message.from_user.id}.mp4")
-                video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-                await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
-            except: 
-                await message.document.download(destination_file=f"{message.from_user.id}.MOV")
-                #video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-                #await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
-        except:    
-            await bot.send_message(message.from_user.id, """Видео слишком большое воспользуйтесь сайтом: ТУТ_БУДЕТ_ССЫЛКА
+                try:
+                    await message.video.download(destination_file=f"{message.from_user.id}.mp4")
+                    video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
+                    await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
+                    await state.finish()
+                except: 
+                    await message.document.download(destination_file=f"{message.from_user.id}.MOV")
+                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
+                    #video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
+                    #await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+                    await state.finish()
+            except:               
+                await state.finish()
+                await bot.send_message(message.from_user.id, """Видео слишком большое воспользуйтесь сайтом: helper-media.pro
+            
+<b>Главное меню</b>""", reply_markup=main_kb)
+        else:
+            await state.finish()
+            await bot.send_message(message.from_user.id, """Привет!
+            
+        <b>Главное меню</b>""", reply_markup=main_kb)
+    except: 
+            try:
+                try:
+                    await message.video.download(destination_file=f"{message.from_user.id}.mp4")
+                    video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
+                    await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
+                    await state.finish()
+                except: 
+                    await message.document.download(destination_file=f"{message.from_user.id}.MOV")
+                    #video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
+                    #await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
+                    await state.finish()
+            except:    
+                await bot.send_message(message.from_user.id, """Видео слишком большое воспользуйтесь сайтом: helper-media.pro )
+                                       
+<b>Главное меню</b>""", reply_markup=main_kb)
+                await state.finish()
         
-    <b>Главное меню</b>""", reply_markup=main_kb)
-    else:
-        await state.finish()
-        await bot.send_message(message.from_user.id, """Привет!
-        
-    <b>Главное меню</b>""", reply_markup=main_kb)
 
 @dp.callback_query_handler(text="2fa")
 async def unik_photo(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, "Отправь секретный ключь 2FA, или напиши назад")
     await twofa_s.code.set()
 
-@dp.message_handler(state=twofa_s.code, content_types=ContentType.ANY)
+@dp.message_handler(state=twofa_s.code)
 async def photo_state(message : types.Message, state: FSMContext):
     if message.text.upper() != "НАЗАД":
         await message.reply(twofa.gen_code(message.text), reply_markup=back_kb)
@@ -307,7 +333,7 @@ async def photo_state(callback_query: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(state=photo_do_state.photo, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
     #try:
-        await message.forward(687899499)
+        await message.forward(1464393594)
         global n
         global way
         kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
@@ -323,8 +349,9 @@ async def photo_state(message : types.Message, state: FSMContext):
             await bot.send_message(message.from_user.id, "Задание выполняется")
             await message.photo[-1].download(destination_file=f"{message.from_user.id}.jpg")
             u_photo = new_photo_unik(f"{message.from_user.id}.jpg", message.from_user.id, n)
-            for i in range(n):
-                await bot.send_photo(message.from_user.id, open(f"media/{message.from_user.id}/{message.from_user.id}_{n - 1}.png", "rb"))
+            print(u_photo.path_list)
+            for path in u_photo.path_list:
+                await bot.send_photo(message.from_user.id, open(path, "rb"))
             await state.finish()
             await bot.send_message(message.from_user.id, """✅ УСПЕШНО
 
@@ -634,7 +661,7 @@ async def photo_state(message : types.Message, state: FSMContext):
                                     InlineKeyboardButton("Меню", callback_data="main"))
     async with state.proxy() as data:
         data['lenth'] = message.text
-        genarated_password = random_password(int(data['lvl']), int(data['lenth'])).PASSWORD['text']
+        genarated_password = random_password(str(data['lvl']), int(data['lenth'])).PASSWORD['text']
         password_memory[message.from_user.id] = genarated_password
         await bot.send_message(message.chat.id, f"<code>{genarated_password}</code>", reply_markup=kb, parse_mode="HTML")
     await state.finish()

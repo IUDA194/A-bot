@@ -13,6 +13,8 @@ class new_photo_unik:
     saturation = 1.1
     scale = 0.99
     resize = 0.98
+    
+    path_list = []
 
     user_id = None
     last_n_index = None
@@ -40,6 +42,7 @@ class new_photo_unik:
                 os.mkdir(os.path.abspath(f"media/{id}"))
 
         # Изменение изображения и сохранение 10 разных фото
+        self.path_list = []
         for i in range(i):
             modified_image = self.modify_image(self.input_image,
                                                self.brightness, 
@@ -49,6 +52,7 @@ class new_photo_unik:
                                                self.scale, 
                                                self.resize, 
                                                self.output_dir, i)
+            self.path_list.append(modified_image)
             print(f"Создано измененное изображение: {modified_image}")
         self.gen_zip()
 
@@ -108,11 +112,11 @@ class new_photo_unik:
 
         # Генерация имени нового файла
         filename = os.path.splitext(os.path.basename(image_path))[0]
-        output_path = os.path.join(output_dir, f"{filename}.png")
+        output_path = os.path.join(output_dir, f"{random.randint(1, 10000000)}.png")
 
         # Генерация имени нового файла
         filename = os.path.splitext(os.path.basename(image_path))[0]
-        output_path = os.path.join(output_dir, f"{filename}_{i}.png")
+        output_path = os.path.join(output_dir, f"{random.randint(1, 10000000)}.png")
 
         # Сохранение измененного изображения
         image_without_exif.save(output_path, "PNG")

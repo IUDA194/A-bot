@@ -6,7 +6,7 @@ fileNames = [ "passport.png", "img3.jpg" ]
 
 class passport_gen:
 
-    passport_path = "templates/passport.png"
+    passport_path = "templates/n.png"
     user_id = None
     photo_path = None
     name = None
@@ -98,6 +98,7 @@ class passport_gen:
 
     def insert_text(self, x : int, y : int, text : str, font_size : int = 24):
         img = Image.open(f"{self.user_id}_r.jpg") 
+        font = ImageFont.load_default()
         draw = ImageDraw.Draw(img)
-        draw.text((x, y), text, fill="black", font=ImageFont.truetype("arial.ttf", font_size))
+        draw.text((x, y), text, fill="black", font=ImageFont.truetype("arial.ttf", font_size)) #
         img.save(f"{self.user_id}_r.jpg")
