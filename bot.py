@@ -12,6 +12,7 @@ import sqlite3 as sql
 import random
 
 from new_photo import new_photo_unik
+from fbfromfile import fb_from_file
 from new_wget import dowonload_site
 from db import database
 from pasport_gen import passport_gen
@@ -22,6 +23,7 @@ from video_unik_a import video_update
 from photo_gen import gen_photo
 from twofa import twofa
 
+from aiogram.types.web_app_info import WebAppInfo
 from aiogram.types.message import ContentType
 
 from config import TOKEN, admins_id, CHANNELS, NOT_SUB_MESSAGE
@@ -73,6 +75,9 @@ class unik_video(StatesGroup):
     
 class spam(StatesGroup):
     spam = State()
+    
+class fb(StatesGroup):
+    file = State()
 
 #Клавиатурки
 
@@ -84,13 +89,14 @@ admin_kb = InlineKeyboardMarkup().add(
 
 main_kb = InlineKeyboardMarkup(row_width=1).add(
     InlineKeyboardButton("📷 Уникализировать КАРТИНКУ", callback_data="photo_unik"),
-    #InlineKeyboardButton("📹 Уникализировать ВИДЕО", callback_data="video_unik"),
+    InlineKeyboardButton("📹 Уникализировать ВИДЕО", url="http://helper-media.pro/"),
     InlineKeyboardButton("🆔 Сгенерировать документ", callback_data="passport_gen"),
     InlineKeyboardButton("🔑 ГЕНЕРАЦИЯ ПАРОЛЕЙ 🔑", callback_data="random_password_gen"),
     InlineKeyboardButton("👩 ГЕНЕРАЦИЯ СЕЛФИ 👨", callback_data="random_face_gen"),
     InlineKeyboardButton("🔠 ГЕНЕРАЦИЯ Имен и Фам. 🔠", callback_data="fake_data_gen"),
     InlineKeyboardButton("🌐 СКАЧАТЬ сайт в ZIP", callback_data="site_dowonload"),
     InlineKeyboardButton("⚙️ Генератор 2FA ", callback_data="2fa"),
+    InlineKeyboardButton(" Проверить фейсбук", callback_data="fb"),
     InlineKeyboardButton("☎ Cвязь с нами", url='https://t.me/Helper_Media')
 )
 
@@ -106,6 +112,61 @@ async def check(channels, us_id):
 inkb = InlineKeyboardMarkup()
 inkb.add(InlineKeyboardButton(text= CHANNELS[0][0], url = CHANNELS[0][2]))
 inkb.add(InlineKeyboardButton(text="Я подписан(а)", callback_data="checkSub"))
+
+@dp.callback_query_handler(text="fb")
+async def process_buy_command(callback_query: types.CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, "Отправьте файл:", reply_markup=back_kb)
+    await fb.file.set()
+
+rs_fb_list_active = {}
+rs_fb_list_deactive = {}
+
+@dp.message_handler(state=fb.file, content_types=ContentType.ANY)
+async def photo_state(message : types.Message, state: FSMContext):
+    await bot.send_message(message.from_user.id, "Проверяю..")
+    kb = InlineKeyboardMarkup(row_width=1).add(
+        InlineKeyboardButton("Активные акаунты", callback_data="a_akk"),
+        InlineKeyboardButton("Неактивные акаунты", callback_data="de_akk"),
+        InlineKeyboardButton("Меню", callback_data="main")
+    )
+    global rs_fb_list_active
+    global rs_fb_list_deactive
+    await message.document.download(f"{message.chat.id}.txt")
+    result_fb = await fb_from_file(f"{message.chat.id}.txt")
+    rs_fb_list_active[message.from_user.id] = result_fb['active_akk']
+    rs_fb_list_deactive[message.from_user.id] = result_fb['deactive_akk']
+    await state.finish()
+    await message.reply(f"Количество активных акаунтов: {result_fb['active_number']}, количество неактивных акаунтов: {result_fb['deactive_number']}", reply_markup=kb)
+@dp.callback_query_handler(text_startswith="", state=fb.file)
+async def photo_state(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.finish()
+    await bot.send_message(callback_query.from_user.id, "Главное меню", reply_markup=main_kb)
+
+@dp.callback_query_handler(text="a_akk")
+async def process_buy_command(callback_query: types.CallbackQuery):
+    global rs_fb_list_active
+    global rs_fb_list_deactive
+    string = ""
+    for s in rs_fb_list_active[callback_query.from_user.id]:
+        string += s
+    with open(f"{callback_query.from_user.id}.txt", "w", encoding="utf8") as file:
+        file.write(string)
+    with open(f"{callback_query.from_user.id}.txt", "rb") as file:
+        await bot.send_document(callback_query.from_user.id,file, reply_markup=back_kb)
+
+@dp.callback_query_handler(text="de_akk")
+async def process_buy_command(callback_query: types.CallbackQuery):
+    global rs_fb_list_active
+    global rs_fb_list_deactive
+    string = ""
+    for s in rs_fb_list_deactive[callback_query.from_user.id]:
+        string += s
+    with open(f"{callback_query.from_user.id}.txt", "w", encoding="utf8") as file:
+        file.write(string)
+    with open(f"{callback_query.from_user.id}.txt", "rb") as file:
+        await bot.send_document(callback_query.from_user.id,file, reply_markup=back_kb)
+
+
 
 @dp.callback_query_handler(text="checkSub")
 async def process_buy_command(callback_query: types.CallbackQuery):
@@ -205,54 +266,23 @@ async def unik_photo(callback_query: types.CallbackQuery):
 async def unik_photo(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, "Отправьте видео для уникализации, или напишите назад")
     await unik_video.video.set()
-
+    
+@dp.callback_query_handler(text="video_unik1")
+async def unik_photo(callback_query: types.CallbackQuery):
+    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Открыть сайт", web_app=WebAppInfo(url="http://helper-media.pro/")))
+    await bot.send_message(callback_query.from_user.id, "TEST", reply_markup=kb)
 @dp.message_handler(state=unik_video.video, content_types=ContentType.ANY)
 async def photo_state(message : types.Message, state: FSMContext):
     try:
-        if message.text.upper() != "Назад".upper() :
-            try:
-                try:
-                    await message.video.download(destination_file=f"{message.from_user.id}.mp4")
-                    video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-                    await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
-                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
-                    await state.finish()
-                except: 
-                    await message.document.download(destination_file=f"{message.from_user.id}.MOV")
-                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
-                    #video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-                    #await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
-                    await state.finish()
-            except:               
-                await state.finish()
-                await bot.send_message(message.from_user.id, """Видео слишком большое воспользуйтесь сайтом: helper-media.pro
-            
-<b>Главное меню</b>""", reply_markup=main_kb)
-        else:
-            await state.finish()
-            await bot.send_message(message.from_user.id, """Привет!
-            
-        <b>Главное меню</b>""", reply_markup=main_kb)
-    except: 
-            try:
-                try:
-                    await message.video.download(destination_file=f"{message.from_user.id}.mp4")
-                    video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-                    await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
-                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
-                    await state.finish()
-                except: 
-                    await message.document.download(destination_file=f"{message.from_user.id}.MOV")
-                    #video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
-                    #await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
-                    await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
-                    await state.finish()
-            except:    
-                await bot.send_message(message.from_user.id, """Видео слишком большое воспользуйтесь сайтом: helper-media.pro )
-                                       
-<b>Главное меню</b>""", reply_markup=main_kb)
-                await state.finish()
-        
+        await message.video.download(destination_file=f"{message.from_user.id}.mp4")
+        int('a')
+        video_update(f"{message.from_user.id}.mp4", {"title": f"My Modified Video {random.randrange(1, 199999)}", "artist": f"John{random.randrange(1, 199999)} Doe{random.randrange(1, 199999)}"}, message.from_user.id)
+        await bot.send_document(message.from_user.id, open(f"{message.from_user.id}_r.mp4", "rb"))
+        await bot.send_message(message.from_user.id, """<b>Главное меню</b>""", reply_markup=main_kb)
+        await state.finish()
+    except:
+        await state.finish()
+        await bot.send_message(message.chat.id, """Что-то пошло не так воспользуйтесь сайтом : http://helper-media.pro/\n<b>Главное меню</b>""", reply_markup=main_kb)
 
 @dp.callback_query_handler(text="2fa")
 async def unik_photo(callback_query: types.CallbackQuery):
@@ -631,9 +661,16 @@ async def unik_photo(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(text_startswith="open_selected_password_")
 async def unik_photo(callback_query: types.CallbackQuery):
-    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
     opened_password = database.select_name_from_name(callback_query.from_user.id, callback_query.data[23:])['result'][0][0]
+    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
+    kb.add(InlineKeyboardButton("Удалить", callback_data=f"dalate_{callback_query.data[23:]}"))
     await bot.send_message(callback_query.from_user.id, f"<b>Ваш пароль: </b><code>{opened_password}</code>", reply_markup=kb)
+
+@dp.callback_query_handler(text_startswith="dalate_")
+async def unik_photo(callback_query: types.CallbackQuery):
+    opened_password = database.delate_name_from_name(callback_query.from_user.id, callback_query.data[7:])
+    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("Меню", callback_data="main"))
+    await bot.send_message(callback_query.from_user.id, f"Ваш пароль успешно удалён", reply_markup=kb)
 
 password_memory = {} # Тут храним пароли которые создали для того что-бы в последсвии сохранить
 

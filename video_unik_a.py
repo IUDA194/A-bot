@@ -16,7 +16,7 @@ class video_update:
 
     def modify_video_metadata(self,user_id, file_path, metadata):
         try:
-            command = ['ffmpeg', '-i', file_path]
+            command = ['ffmpeg.exe', '-i', file_path]
             for key, value in metadata.items():
                 command.extend(['-metadata', f'{key}={value}'])
             command.append(f'{user_id}_r.mp4')

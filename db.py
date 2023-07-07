@@ -45,3 +45,9 @@ class database:
         result = cur.fetchall()
 
         return {"status" : True, "result" : result}
+
+    def delate_name_from_name(self, user_id : str, name : str) -> dict:
+        print(name)
+        cur.execute(""" DELETE FROM passwords WHERE chatid = ? AND name = ? """, (user_id, name))
+        db.commit()
+        return {"status" : True}
